@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 const supabase = require('../config/supabaseClient');
 const { generateToken } = require('../lib/services/jwtService');
 
