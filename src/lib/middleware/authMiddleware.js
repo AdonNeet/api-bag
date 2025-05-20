@@ -12,9 +12,15 @@ const authMiddleware = async (request, h) => {
 
   try {
     const decoded = verifyToken(token);
-    request.auth = { credentials: decoded };
+
+    request.auth = {
+      user_id: decoded.user_id,
+      name: decoded.name,
+      role: decoded.role,
+    };
+    
     return h.continue;
-  } catch (err) {
+  } catch (err ) {
     if (err.name === 'TokenExpiredError') {
       return h.response({ error: 'Expired: Token expired' }).code(401).takeover();
     }

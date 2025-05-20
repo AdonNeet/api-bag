@@ -1,5 +1,4 @@
 /* eslint-disable no-useless-catch */
-/* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 // lib/services/jwtService.js
 const jwt = require('jsonwebtoken');
