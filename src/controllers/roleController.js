@@ -25,12 +25,16 @@ const roleController = {
     const { roleWorker } = request.payload;
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('role_worker')
-        .update({ roleWorker })
-        .eq('role_id', role_id);
+        .update({ roleWorker, updated_at: new Date() })
+        .eq('role_id', role_id)
+        .select();
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        return h.response({ message: 'Role tidak ditemukan' }).code(404);
+      }
 
       return h.response({ message: 'Role berhasil diperbarui' }).code(200);
     } catch (err) {
@@ -60,12 +64,16 @@ const roleController = {
     const { role_id } = request.params;
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('role_worker')
         .delete()
-        .eq('role_id', role_id);
+        .eq('role_id', role_id)
+        .select();
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        return h.response({ message: 'Role tidak ditemukan' }).code(404);
+      }
 
       return h.response({ message: 'Role berhasil dihapus' }).code(200);
     } catch (err) {

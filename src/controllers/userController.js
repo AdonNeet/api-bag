@@ -1,212 +1,326 @@
-const supabase = require('../config/supabaseClient');
-const { generateToken } = require('../lib/services/jwtService');
+/* eslint-disable no-unused-vars */
+const supabase = require("../config/supabaseClient");
+const { generateToken } = require("../lib/services/jwtService");
 
 const userController = {
   // --------------------- USERS ---------------------
-    addUser: async (request, h) => {
-        const { name, email, password } = request.payload;
+  addUser: async (request, h) => {
+    const { name, email, password } = request.payload;
 
-        const { data, error } = await supabase
-        .from('Users')
-        .insert({ name, email, password })
-        .select();
+    const { data, error } = await supabase
+      .from("users")
+      .insert({ name, email, password })
+      .select()
+      .single();
 
-        if (error) {
-        return h.response({ status: 'fail', message: error.message }).code(400);
-        }
+    if (error) {
+      return h.response({ status: "fail", message: error.message }).code(400);
+    }
 
-        return h.response({ status: 'success', data: data[0] }).code(201);
-    },
+    return h.response({ status: "success", data }).code(201);
+  },
 
-    updateUser: async (request, h) => {
-        const { user_id } = request.params;
-        const { name, email, password } = request.payload;
+  updateUser: async (request, h) => {
+    const { user_id } = request.params;
+    const { name, email, password } = request.payload;
 
-        const { data, error } = await supabase
-        .from('Users')
-        .update({ name, email, password })
-        .eq('user_id', user_id)
-        .select();
+    const { data, error } = await supabase
+      .from("users")
+      .update({ name, email, password })
+      .eq("user_id", user_id)
+      .select()
+      .single();
 
-        if (error || data.length === 0) {
-        return h.response({ status: 'fail', message: error?.message || 'User not found' }).code(404);
-        }
+    if (error || !data) {
+      return h
+        .response({
+          status: "fail",
+          message: error?.message || "User not found",
+        })
+        .code(404);
+    }
 
-        return h.response({ status: 'success', data: data[0] }).code(200);
-    },
+    return h.response({ status: "success", data }).code(200);
+  },
 
-    login: async (request, h) => {
-        const { name, password } = request.payload;
+  login: async (request, h) => {
+    const { name, password } = request.payload;
+    const key = name.includes("@") ? "email" : "name";
 
-        if(name.include("@")) {
-            const { data, errorA } = await supabase
-                .from('Users')
-                .select('*')
-                .eq('email', name)
-                .eq('password', password)
-                .maybeSingle();
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq(key, name)
+      .eq("password", password)
+      .maybeSingle();
 
-            if (errorA || !data) {
-                return h.response({ status: 'fail', message: 'Invalid credentials' }).code(401);
-            }
+    if (error || !user) {
+      return h
+        .response({ status: "fail", message: "Invalid credentials" })
+        .code(401);
+    }
 
-            const { check, errorB } = await supabase
-                .from('owners')
-                .select('*')
-                .eq('owner_id', data.user_id)
-                .maybeSingle()
+    const { data: owner } = await supabase
+      .from("owners")
+      .select("*")
+      .eq("owner_id", user.user_id)
+      .maybeSingle();
 
-            let role = "worker"
-            if (!errorB || check) {
-                role = "owner"
-            } 
+    const role = owner ? "owner" : "worker";
 
-            const token = generateToken({
-                user_id: data.user_id,
-                name: data.name,
-                role: role
-            });
+    const token = generateToken({
+      user_id: user.user_id,
+      name: user.name,
+      role,
+    });
 
-            return h.response({ status: 'success', token, user: data }).code(200);
-        } else {
-            const { data, errorA } = await supabase
-                .from('Users')
-                .select('*')
-                .eq('name', name)
-                .eq('password', password)
-                .maybeSingle();
+    return h.response({ status: "success", token, user }).code(200);
+  },
 
-            if (errorA || !data) {
-                return h.response({ status: 'fail', message: 'Invalid credentials' }).code(401);
-            }
+  getUserInfo: async (request, h) => {
+    const { user_id } = request.params;
 
-            const { check, errorB } = await supabase
-                .from('owners')
-                .select('*')
-                .eq('owner_id', data.user_id)
-                .maybeSingle()
+    const { data, error } = await supabase
+      .from("users")
+      .select("user_id, name, email, password")
+      .eq("user_id", user_id)
+      .maybeSingle();
 
-            let role = "worker"
-            if (!errorB || check) {
-                role = "owner"
-            }
+    if (error || !data) {
+      return h
+        .response({ status: "fail", message: "User not found" })
+        .code(404);
+    }
 
-            const token = generateToken({
-                user_id: data.user_id,
-                name: data.name,
-                role: role
-            });
+    return h.response({ status: "success", data }).code(200);
+  },
 
-            return h.response({ status: 'success', token }).code(200);
-        }
+  deleteUser: async (request, h) => {
+    const { user_id } = request.params;
 
-        
-    },
+    const { error } = await supabase
+      .from("users")
+      .delete()
+      .eq("user_id", user_id);
 
-    getUserInfo: async (request, h) => {
-        const { user_id } = request.params;
+    if (error) {
+      return h.response({ status: "fail", message: error.message }).code(400);
+    }
 
-        const { data, error } = await supabase
-            .from('Users')
-            .select('user_id, name, email, created_at')
-            .eq('user_id', user_id)
-            .maybeSingle();
+    return h.response({ status: "success", message: "User deleted" }).code(200);
+  },
 
-        if (error || !data) {
-        return h.response({ status: 'fail', message: 'User not found' }).code(404);
-        }
+  // --------------------- OWNERS ---------------------
+  getOwnerAll: async (request, h) => {
+    const { data, error } = await supabase
+      .from("owners")
+      .select("owner_id, user_id");
 
-        return h.response({ status: 'success', data }).code(200);
-    },
+    if (error) {
+      return h.response({ status: "fail", message: error.message }).code(400);
+    }
 
-    deleteUser: async (request, h) => {
-        const { user_id } = request.params;
+    return h.response({ status: "success", data }).code(200);
+  },
 
-        const { error } = await supabase
-            .from('Users')
-            .delete()
-            .eq('user_id', user_id);
+  // --------------------- WORKERS ---------------------
+  addWorker: async (request, h) => {
+    const { name, email, password, role_id } = request.payload;
 
-        if (error) {
-        return h.response({ status: 'fail', message: error.message }).code(400);
-        }
+    const { data: user, error: errorUser } = await supabase
+      .from("users")
+      .insert({ name, email, password })
+      .select("user_id")
+      .single();
 
-        return h.response({ status: 'success', message: 'User deleted' }).code(200);
-    },
+    if (errorUser) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal menambahkan user: ${errorUser.message}`,
+        })
+        .code(400);
+    }
 
-    // --------------------- OWNERS ---------------------
-    getOwnerAll: async (request, h) => {
-        const { data, error } = await supabase
-            .from('Owners')
-            .select('owner_id, user_id');
+    const { data: worker, error: errorWorker } = await supabase
+      .from("workers")
+      .insert({ user_id: user.user_id, role_id })
+      .select()
+      .single();
 
-        if (error) {
-        return h.response({ status: 'fail', message: error.message }).code(400);
-        }
+    if (errorWorker) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal menambahkan worker: ${errorWorker.message}`,
+        })
+        .code(400);
+    }
 
-        return h.response({ status: 'success', data }).code(200);
-    },
+    return h
+      .response({
+        status: "success",
+        message: "Worker berhasil ditambahkan",
+        data: { user, worker },
+      })
+      .code(201);
+  },
 
-    // --------------------- WORKERS ---------------------
-    addWorker: async (request, h) => {
-        const { user_id } = request.payload;
+  updateWorker: async (request, h) => {
+    const { worker_id } = request.params;
+    const { name, email, password, role_id } = request.payload;
 
-        const { data, error } = await supabase
-            .from('Workers')
-            .insert({ user_id })
-            .select();
+    const { data: user, error: errorUser } = await supabase
+      .from("users")
+      .update({ name, email, password })
+      .eq("user_id", worker_id)
+      .select()
+      .single();
 
-        if (error) {
-        return h.response({ status: 'fail', message: error.message }).code(400);
-        }
+    if (errorUser || !user) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal update user: ${
+            errorUser?.message || "User not found"
+          }`,
+        })
+        .code(404);
+    }
 
-        return h.response({ status: 'success', data: data[0] }).code(201);
-    },
+    const { data: worker, error: errorWorker } = await supabase
+      .from("workers")
+      .update({ role_id })
+      .eq("user_id", worker_id)
+      .select()
+      .single();
 
-    assignRole: async (request, h) => {
-        const { worker_id } = request.params;
-        const { role_id } = request.payload;
+    if (errorWorker || !worker) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal update worker: ${
+            errorWorker?.message || "Worker not found"
+          }`,
+        })
+        .code(404);
+    }
 
-        const { data, error } = await supabase
-            .from('Workers')
-            .update({ role_id })
-            .eq('worker_id', worker_id)
-            .select();
+    return h
+      .response({
+        status: "success",
+        message: "Data worker berhasil diperbarui",
+        data: { user, worker },
+      })
+      .code(200);
+  },
 
-        if (error || data.length === 0) {
-        return h.response({ status: 'fail', message: error?.message || 'Worker not found' }).code(404);
-        }
+  deleteWorker: async (request, h) => {
+    const { worker_id } = request.params;
 
-        return h.response({ status: 'success', data: data[0] }).code(200);
-    },
+    const { error: errorWorker } = await supabase
+      .from("workers")
+      .delete()
+      .eq("worker_id", worker_id);
 
-    getWorkers: async (request, h) => {
-        const { data, error } = await supabase
-            .from('Workers')
-            .select('worker_id, user_id, role_id');
+    if (errorWorker) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal menghapus data worker: ${errorWorker.message}`,
+        })
+        .code(400);
+    }
 
-        if (error) {
-        return h.response({ status: 'fail', message: error.message }).code(400);
-        }
+    const { error: errorUser } = await supabase
+      .from("users")
+      .delete()
+      .eq("user_id", worker_id);
 
-        return h.response({ status: 'success', data }).code(200);
-    },
+    if (errorUser) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal menghapus data user: ${errorUser.message}`,
+        })
+        .code(400);
+    }
 
-    getWorkerInfo: async (request, h) => {
-        const { worker_id } = request.params;
+    return h
+      .response({
+        status: "success",
+        message: "Worker dan user berhasil dihapus",
+      })
+      .code(200);
+  },
 
-        const { data, error } = await supabase
-            .from('Workers')
-            .select('worker_id, user_id, role_id')
-            .eq('worker_id', worker_id)
-            .maybeSingle();
+  assignRole: async (request, h) => {
+    const { worker_id } = request.params;
+    const { role_id } = request.payload;
 
-        if (error || !data) {
-        return h.response({ status: 'fail', message: 'Worker not found' }).code(404);
-        }
+    const { data, error } = await supabase
+      .from("workers")
+      .update({ role_id })
+      .eq("worker_id", worker_id)
+      .select()
+      .single();
 
-        return h.response({ status: 'success', data }).code(200);
-    },
+    if (error || !data) {
+      return h
+        .response({
+          status: "fail",
+          message: error?.message || "Worker not found",
+        })
+        .code(404);
+    }
+
+    return h.response({ status: "success", data }).code(200);
+  },
+
+  getWorkers: async (request, h) => {
+    const { data, error } = await supabase
+      .from("workers_with_user_info")
+      .select("worker_id, name, roleWorker, email, password");
+
+    if (error) {
+      return h.response({ status: "fail", message: error.message }).code(400);
+    }
+
+    return h.response({ status: "success", data }).code(200);
+  },
+
+  getWorkerInfo: async (request, h) => {
+    const { worker_id } = request.params;
+
+    const { data, error } = await supabase
+      .from("workers_with_user_info")
+      .select("worker_id, name, roleWorker, email, password")
+      .eq("worker_id", worker_id)
+      .maybeSingle();
+
+    if (error || !data) {
+      return h
+        .response({ status: "fail", message: "Worker not found" })
+        .code(404);
+    }
+
+    return h.response({ status: "success", data }).code(200);
+  },
+
+  getWorkerByRole: async (request, h) => {
+    const { role_id } = request.params;
+
+    const { data, error } = await supabase
+      .from("workers_with_user_info")
+      .select("worker_id, name, roleWorker, email, password")
+      .eq('role_id', role_id);
+
+    if (error) {
+      return h.response({ status: "fail", message: error.message }).code(400);
+    }
+
+    return h.response({ status: "success", data }).code(200);
+  },
 };
 
 module.exports = userController;

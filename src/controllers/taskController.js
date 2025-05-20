@@ -153,6 +153,7 @@ const taskController = {
       role_id,
       quantity,
       note,
+      statusTask,
       start_date,
       due_date
     } = request.payload;
@@ -164,9 +165,9 @@ const taskController = {
           role_id,
           quantity,
           note,
+          statusTask,
           start_date,
-          due_date,
-          updated_at: new Date()
+          due_date
         })
         .eq('task_id', task_id);
 
