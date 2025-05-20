@@ -10,6 +10,7 @@ const userSchemas = {
 
     updateUser: Joi.object({
         name: Joi.string().min(3).optional(),
+        email: Joi.string().min(3).optional(),
         password: Joi.string().min(6).optional()
     }),
 
@@ -19,11 +20,21 @@ const userSchemas = {
     }),
 
     addWorker: Joi.object({
-      user_id: Joi.number().integer().required()
+        name: Joi.string().min(3).required(),
+        email: Joi.string().min(3).required(),
+        password: Joi.string().min(6).required(),
+        role_id: Joi.number().integer().required()
+    }),
+
+    updateWorker: Joi.object({
+        name: Joi.string().min(3).optional(),
+        email: Joi.string().min(3).optional(),
+        password: Joi.string().min(6).optional(),
+        role_id: Joi.number().integer().optional()
     }),
   
     assignRole: Joi.object({
-      id_role: Joi.number().integer().required()
+      role_id: Joi.number().integer().required()
     })
 }
 
