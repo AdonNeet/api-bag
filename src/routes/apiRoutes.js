@@ -9,21 +9,21 @@ const { roleSchemas } = require('../validations/roleSchema');
 const { taskSchemas } = require('../validations/taskSchema');
 const { orderSchemas } = require('../validations/orderSchema');
 
+const authMiddleware = require('../lib/middleware/authMiddleware');
+const { ownerOnly, workerOnly } = require('../lib/middleware/roleMiddleware');
+
 const failAction = (request, h, err) => {
   return h.response({ error: err.details[0].message }).code(400).takeover();
 };
 
 const routes = [
+  // --------------------- HOMEPAGE ---------------------
   {
     method: 'GET',
     path: '/',
     handler: async (request, h) => {
-      try {
-        const welcomeMessage = 'Welcome to our Hartono Bag APIs';
-        return h.response({ status: 'success', message: welcomeMessage }).code(200);
-      } catch (error) {
-        return h.response({ error: 'Failed to retrieve homepage.' }).code(500);
-      }
+      const welcomeMessage = 'Welcome to our Hartono Bag APIs';
+      return h.response({ status: 'success', message: welcomeMessage }).code(200);
     }
   },
 
@@ -33,10 +33,7 @@ const routes = [
     path: '/users',
     handler: userController.addUser,
     options: {
-      validate: {
-        payload: userSchemas.addUser,
-        failAction
-      }
+      validate: { payload: userSchemas.addUser, failAction }
     }
   },
   {
@@ -44,10 +41,8 @@ const routes = [
     path: '/users/{user_id}',
     handler: userController.updateUser,
     options: {
-      validate: {
-        payload: userSchemas.updateUser,
-        failAction
-      }
+      pre: [authMiddleware],
+      validate: { payload: userSchemas.updateUser, failAction }
     }
   },
   {
@@ -55,37 +50,40 @@ const routes = [
     path: '/users/login',
     handler: userController.login,
     options: {
-      validate: {
-        payload: userSchemas.login,
-        failAction
-      }
+      validate: { payload: userSchemas.login, failAction }
     }
   },
-
   {
     method: 'GET',
     path: '/users/{user_id}',
-    handler: userController.getUserInfo
+    handler: userController.getUserInfo,
+    options: {
+      pre: [authMiddleware]
+    }
   },
   {
     method: 'DELETE',
     path: '/users/{user_id}',
-    handler: userController.deleteUser
+    handler: userController.deleteUser,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
   },
   {
     method: 'GET',
     path: '/owners',
-    handler: userController.getOwnerAll
+    handler: userController.getOwnerAll,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
   },
   {
     method: 'POST',
     path: '/workers',
     handler: userController.addWorker,
     options: {
-      validate: {
-        payload: userSchemas.addWorker,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: userSchemas.addWorker, failAction }
     }
   },
   {
@@ -93,33 +91,35 @@ const routes = [
     path: '/workers/{worker_id}/role',
     handler: userController.assignRole,
     options: {
-      validate: {
-        payload: userSchemas.assignRole,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: userSchemas.assignRole, failAction }
     }
   },
   {
     method: 'GET',
     path: '/workers',
-    handler: userController.getWorkers
+    handler: userController.getWorkers,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
   },
   {
     method: 'GET',
     path: '/workers/{worker_id}',
-    handler: userController.getWorkerInfo
+    handler: userController.getWorkerInfo,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
   },
 
-  // --------------------- ROLE WORKER ---------------------
+  // --------------------- ROLES ---------------------
   {
     method: 'POST',
     path: '/roles',
     handler: roleController.addRole,
     options: {
-      validate: {
-        payload: roleSchemas.addRole,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: roleSchemas.addRole, failAction }
     }
   },
   {
@@ -127,10 +127,24 @@ const routes = [
     path: '/roles/{role_id}',
     handler: roleController.editRole,
     options: {
-      validate: {
-        payload: roleSchemas.editRole,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: roleSchemas.editRole, failAction }
+    }
+  },
+  {
+    method: 'GET',
+    path: '/roles',
+    handler: roleController.getRoleAll,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/roles/{role_id}',
+    handler: roleController.deleteRole,
+    options: {
+      pre: [authMiddleware, ownerOnly]
     }
   },
 
@@ -140,53 +154,59 @@ const routes = [
     path: '/orders',
     handler: orderController.addOrder,
     options: {
-      validate: {
-        payload: orderSchemas.addOrder,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: orderSchemas.addOrder, failAction }
     }
   },
   {
     method: 'GET',
     path: '/orders',
-    handler: orderController.getOrders
+    handler: orderController.getOrders,
+    options: {
+      pre: [authMiddleware]
+    }
   },
   {
     method: 'GET',
     path: '/orders/{order_id}',
-    handler: orderController.getOrderInfo
+    handler: orderController.getOrderInfo,
+    options: {
+      pre: [authMiddleware]
+    }
   },
   {
     method: 'PUT',
     path: '/orders/{order_id}',
     handler: orderController.updateOrder,
     options: {
-      validate: {
-        payload: orderSchemas.updateOrder,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: orderSchemas.updateOrder, failAction }
     }
   },
   {
     method: 'DELETE',
     path: '/orders/{order_id}',
-    handler: orderController.deleteOrder
+    handler: orderController.deleteOrder,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
   },
   {
     method: 'PUT',
     path: '/orders/{order_id}/status',
     handler: orderController.updateOrderStatus,
     options: {
-      validate: {
-        payload: orderSchemas.updateStatus,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: orderSchemas.updateStatus, failAction }
     }
   },
   {
     method: 'GET',
     path: '/order-status',
-    handler: orderController.getOrderStatsAll
+    handler: orderController.getOrderStatsAll,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
   },
 
   // --------------------- TASKS ---------------------
@@ -195,47 +215,66 @@ const routes = [
     path: '/tasks',
     handler: taskController.addTask,
     options: {
-      validate: {
-        payload: taskSchemas.addTask,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: taskSchemas.addTask, failAction }
     }
   },
   {
     method: 'GET',
     path: '/tasks',
-    handler: taskController.getTasks
+    handler: taskController.getTasks,
+    options: {
+      pre: [authMiddleware]
+    }
   },
   {
     method: 'GET',
     path: '/tasks/order/{order_id}',
-    handler: taskController.getTasksByOrder
+    handler: taskController.getTasksByOrder,
+    options: {
+      pre: [authMiddleware]
+    }
+  },
+  {
+    method: 'GET',
+    path: '/tasks/order/worker/{worker_id}',
+    handler: taskController.getTasksByWorker,
+    options: {
+      pre: [authMiddleware, workerOnly]
+    }
   },
   {
     method: 'GET',
     path: '/tasks/{task_id}',
-    handler: taskController.getTaskInfo
+    handler: taskController.getTaskInfo,
+    options: {
+      pre: [authMiddleware]
+    }
   },
   {
     method: 'PUT',
     path: '/tasks/{task_id}',
     handler: taskController.updateTask,
     options: {
-      validate: {
-        payload: taskSchemas.updateTask,
-        failAction
-      }
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: taskSchemas.updateTask, failAction }
     }
   },
   {
     method: 'DELETE',
     path: '/tasks/{task_id}',
-    handler: taskController.deleteTask
+    handler: taskController.deleteTask,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
   },
   {
     method: 'GET',
     path: '/task-status',
-    handler: taskController.getTaskStatsAll
+    handler: taskController.getTaskStatsAll,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
   }
 ];
 
