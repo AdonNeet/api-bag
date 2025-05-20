@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-const { verifyToken } = require('../services/jwtService');
+ const { verifyToken } = require('../services/jwtService');
 
 const authMiddleware = async (request, h) => {
   const authHeader = request.headers.authorization;
@@ -18,7 +17,7 @@ const authMiddleware = async (request, h) => {
       name: decoded.name,
       role: decoded.role,
     };
-    
+
     return h.continue;
   } catch (err ) {
     if (err.name === 'TokenExpiredError') {
