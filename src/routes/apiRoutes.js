@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 const userController = require('../controllers/userController');
 const roleController = require('../controllers/roleController');
 const taskController = require('../controllers/taskController');
