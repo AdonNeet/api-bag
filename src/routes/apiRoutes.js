@@ -30,8 +30,9 @@ const routes = [
   {
     method: 'POST',
     path: '/users',
-    handler: userController.addUser,
+    handler: userController.addUser, // plain user without roles
     options: {
+      pre: [authMiddleware, ownerOnly],
       validate: { payload: userSchemas.addUser, failAction }
     }
   },
@@ -87,11 +88,28 @@ const routes = [
   },
   {
     method: 'PUT',
+    path: '/workers/{worker_id}',
+    handler: userController.updateWorker,
+    options: {
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: userSchemas.updateUser, failAction }
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/workers/{worker_id}',
+    handler: userController.deleteWorker,
+    options: {
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: userSchemas.addWorker, failAction }
+    }
+  },
+  {
+    method: 'PUT',
     path: '/workers/{worker_id}/role',
     handler: userController.assignRole,
     options: {
-      pre: [authMiddleware, ownerOnly],
-      validate: { payload: userSchemas.assignRole, failAction }
+      pre: [authMiddleware, ownerOnly]
     }
   },
   {
@@ -99,13 +117,22 @@ const routes = [
     path: '/workers',
     handler: userController.getWorkers,
     options: {
-      pre: [authMiddleware, ownerOnly]
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: userSchemas.addWorker, failAction }
     }
   },
   {
     method: 'GET',
     path: '/workers/{worker_id}',
     handler: userController.getWorkerInfo,
+    options: {
+      pre: [authMiddleware, ownerOnly]
+    }
+  },
+  {
+    method: 'GET',
+    path: '/workers/role/{role_id}',
+    handler: userController.getWorkerByRole,
     options: {
       pre: [authMiddleware, ownerOnly]
     }
