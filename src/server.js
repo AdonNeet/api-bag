@@ -15,6 +15,19 @@ const init = async () => {
     },
   });
 
+  server.route({
+    method: "OPTIONS",
+    path: "/{any}",
+    handler: (request, h) => {
+      return h
+        .response("OK")
+        .code(200)
+        .header("Access-Control-Allow-Origin", "")
+        .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        .header("Access-Control-Allow-Headers", "Content-Type, x-api-key");
+    },
+  });
+
   server.route(routes);
 
   const VALID_API_KEY = process.env.KunciRumah;
@@ -28,7 +41,7 @@ const init = async () => {
     if (request.method === "options") {
       return h.continue;
     }
-    
+
     const apiKey = request.headers["x-api-key"];
 
     if (!apiKey || apiKey !== VALID_API_KEY) {
