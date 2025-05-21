@@ -6,8 +6,8 @@ const routes = require("./routes/apiRoutes");
 
 const init = async () => {
   const server = Hapi.server({
-    host: '0.0.0.0',
-    port: 5000,
+    host: "0.0.0.0",
+    port: 3000,
     routes: {
       cors: {
         origin: ["*"],
@@ -19,8 +19,10 @@ const init = async () => {
 
   const VALID_API_KEY = process.env.KunciRumah;
 
-  server.ext('onRequest', (request, h) => {
-    console.log(`Incoming request: ${request.method.toUpperCase()} ${request.path}`);
+  server.ext("onRequest", (request, h) => {
+    console.log(
+      `Incoming request: ${request.method.toUpperCase()} ${request.path}`
+    );
     const apiKey = request.headers["x-api-key"];
 
     if (!apiKey || apiKey !== VALID_API_KEY) {
@@ -30,10 +32,10 @@ const init = async () => {
     return h.continue;
   });
 
-  server.ext('onPreResponse', (request, h) => {
+  server.ext("onPreResponse", (request, h) => {
     const response = request.response;
     if (response.isBoom) {
-      console.error('Error occurred:', response.output.payload);
+      console.error("Error occurred:", response.output.payload);
     }
     return h.continue;
   });
