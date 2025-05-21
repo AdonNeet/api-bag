@@ -4,7 +4,7 @@ const orderController = {
   // Buat Order
   addOrder: async (request, h) => {
     try {
-      const { order_name, typeOrder, note, start_date, due_date } =
+      const { order_name, typeorder, note, start_date, due_date } =
         request.payload;
       const { owner_id } = request.auth;
 
@@ -12,7 +12,7 @@ const orderController = {
         {
           owner_id,
           order_name,
-          typeOrder,
+          typeorder,
           note,
           statusorder: "produksi",
           start_date,
