@@ -23,6 +23,12 @@ const init = async () => {
     console.log(
       `Incoming request: ${request.method.toUpperCase()} ${request.path}`
     );
+
+    // Biar preflight OPTIONS gak divalidasi
+    if (request.method === "options") {
+      return h.continue;
+    }
+    
     const apiKey = request.headers["x-api-key"];
 
     if (!apiKey || apiKey !== VALID_API_KEY) {
