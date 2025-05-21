@@ -11,20 +11,9 @@ const init = async () => {
     routes: {
       cors: {
         origin: ["*"],
+        additionalHeaders: ["x-api-key", "content-type"],
+        additionalExposedHeaders: ["x-api-key"],
       },
-    },
-  });
-
-  server.route({
-    method: "OPTIONS",
-    path: "/{any}",
-    handler: (request, h) => {
-      return h
-        .response("OK")
-        .code(200)
-        .header("Access-Control-Allow-Origin", "*")
-        .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        .header("Access-Control-Allow-Headers", "Content-Type, x-api-key");
     },
   });
 
