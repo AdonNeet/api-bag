@@ -36,9 +36,14 @@ const taskController = {
     }
   },
 
-  // Ambil semua task dari VIEW
-  getTasks: async (_request, h) => {
+  // Ambil tasks dengan pagination, urut dari task terbaru
+  getTasks: async (request, h) => {
     try {
+      const page = parseInt(request.query.page) || 1;
+      const limit = 20;
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
       const { data, error } = await supabase
         .from('tasks_with_worker_name')
         .select(`
@@ -53,16 +58,19 @@ const taskController = {
           note, 
           start_date, 
           due_date
-        `);
+        `)
+        .order('task_id', { ascending: false }) // urut dari task_id terbaru
+        .range(from, to);
 
       if (error) throw error;
 
-      return h.response(data).code(200);
+      return h.response({ page, data }).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: 'Gagal mengambil tasks' }).code(500);
     }
   },
+
 
   // Ambil semua task berdasarkan order dari VIEW
   getTasksByOrder: async (request, h) => {

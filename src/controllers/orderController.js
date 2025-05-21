@@ -28,17 +28,29 @@ const orderController = {
     }
   },
 
-  // Ambil Semua Order
-  getOrders: async (_req, h) => {
+  // Ambil orders dengan pagination
+  getOrders: async (request, h) => {
     try {
-      const { data, error } = await supabase.from("orders").select("*");
+      const page = parseInt(request.query.page) || 1;
+      const limit = 20;
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("order_id", { ascending: false }) // urut dari yang terbaru
+        .range(from, to); // ambil sesuai page
+
       if (error) throw error;
-      return h.response(data).code(200);
+
+      return h.response({ page, data }).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: "Gagal mengambil data orders" }).code(500);
     }
   },
+
 
   // Detail Order
   getOrderInfo: async (request, h) => {

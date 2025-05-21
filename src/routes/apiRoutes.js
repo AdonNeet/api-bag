@@ -185,7 +185,7 @@ const routes = [
   },
   {
     method: 'GET',
-    path: '/orders',
+    path: '/orders',  // /orders?page={int} paginations, 20 item
     handler: orderController.getOrders,
     options: {
       pre: [authMiddleware]
@@ -246,7 +246,7 @@ const routes = [
   },
   {
     method: 'GET',
-    path: '/tasks',
+    path: '/tasks',   // /tasks?page={int} paginations, 20 item
     handler: taskController.getTasks,
     options: {
       pre: [authMiddleware]
