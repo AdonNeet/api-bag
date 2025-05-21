@@ -14,7 +14,7 @@ const orderController = {
           order_name,
           typeOrder,
           note,
-          statusOrder: "produksi",
+          statusorder: "produksi",
           start_date,
           due_date,
         },
@@ -63,9 +63,9 @@ const orderController = {
     const { order_id } = request.params;
     const {
       order_name,
-      typeOrder,
+      typeorder,
       note,
-      statusOrder,
+      statusorder,
       start_date,
       due_date,
     } = request.payload;
@@ -77,9 +77,9 @@ const orderController = {
         .update({
           owner_id,
           order_name,
-          typeOrder,
+          typeorder,
           note,
-          statusOrder,
+          statusorder,
           start_date,
           due_date,
           updated_at: new Date(),
@@ -113,12 +113,12 @@ const orderController = {
   // Update Status Order
   updateOrderStatus: async (request, h) => {
     const { order_id } = request.params;
-    const { statusOrder } = request.payload;
+    const { statusorder } = request.payload;
 
     try {
       const { error } = await supabase
         .from("orders")
-        .update({ statusOrder, updated_at: new Date() })
+        .update({ statusorder })
         .eq("order_id", order_id);
 
       if (error) throw error;
@@ -136,7 +136,7 @@ const orderController = {
     try {
       const { data, error } = await supabase
         .from("order_status")
-        .select("status_order");
+        .select("statusorder");
 
       if (error) throw error;
       return h.response(data).code(200);

@@ -49,7 +49,7 @@ const userController = {
 
     const { data: user, error } = await supabase
       .from("users")
-      .select("*")
+      .select("user_id, name, email")
       .eq(key, name)
       .eq("password", password)
       .maybeSingle();
@@ -280,7 +280,7 @@ const userController = {
   getWorkers: async (request, h) => {
     const { data, error } = await supabase
       .from("workers_with_user_info")
-      .select("worker_id, name, roleWorker, email, password");
+      .select("worker_id, name, roleworker, email, password");
 
     if (error) {
       return h.response({ status: "fail", message: error.message }).code(400);
@@ -294,7 +294,7 @@ const userController = {
 
     const { data, error } = await supabase
       .from("workers_with_user_info")
-      .select("worker_id, name, roleWorker, email, password")
+      .select("worker_id, name, roleworker, email, password")
       .eq("worker_id", worker_id)
       .maybeSingle();
 
@@ -312,7 +312,7 @@ const userController = {
 
     const { data, error } = await supabase
       .from("workers_with_user_info")
-      .select("worker_id, name, roleWorker, email, password")
+      .select("worker_id, name, roleworker, email, password")
       .eq('role_id', role_id);
 
     if (error) {

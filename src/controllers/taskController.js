@@ -20,11 +20,11 @@ const taskController = {
           order_id,
           worker_id,
           role_id,
+          statustask: 'produksi', // default
           quantity,
           note,
           start_date,
-          due_date,
-          statusTask: 'produksi' // default
+          due_date
         }]);
 
       if (error) throw error;
@@ -47,8 +47,8 @@ const taskController = {
           worker_id, 
           worker_name, 
           role_id, 
-          roleWorker, 
-          statusTask, 
+          roleworker, 
+          statustask, 
           quantity, 
           note, 
           start_date, 
@@ -77,8 +77,8 @@ const taskController = {
           worker_id, 
           worker_name, 
           role_id, 
-          roleWorker, 
-          statusTask, 
+          roleworker, 
+          statustask, 
           quantity, 
           note, 
           start_date, 
@@ -108,8 +108,8 @@ const taskController = {
           order_id, 
           order_name, 
           role_id, 
-          roleWorker, 
-          statusTask, 
+          roleworker, 
+          statustask, 
           quantity, 
           note, 
           start_date, 
@@ -132,8 +132,20 @@ const taskController = {
 
     try {
       const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
+        .from('tasks_with_worker_name')
+        .select(`
+          task_id, 
+          order_id, 
+          worker_id, 
+          worker_name, 
+          role_id, 
+          roleworker, 
+          statustask, 
+          quantity, 
+          note, 
+          start_date, 
+          due_date
+        `)
         .eq('task_id', task_id)
         .single();
 
@@ -153,7 +165,7 @@ const taskController = {
       role_id,
       quantity,
       note,
-      statusTask,
+      statustask,
       start_date,
       due_date
     } = request.payload;
@@ -165,7 +177,7 @@ const taskController = {
           role_id,
           quantity,
           note,
-          statusTask,
+          statustask,
           start_date,
           due_date
         })

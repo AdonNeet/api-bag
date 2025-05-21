@@ -3,12 +3,12 @@ const supabase = require('../config/supabaseClient');
 const roleController = {
   // Menambahkan role baru
   addRole: async (request, h) => {
-    const { roleWorker } = request.payload;
+    const { roleworker } = request.payload;
 
     try {
       const { error } = await supabase
         .from('role_worker')
-        .insert([{ roleWorker }]);
+        .insert([{ roleworker }]);
 
       if (error) throw error;
 
@@ -22,12 +22,12 @@ const roleController = {
   // Mengedit role berdasarkan role_id
   editRole: async (request, h) => {
     const { role_id } = request.params;
-    const { roleWorker } = request.payload;
+    const { roleworker } = request.payload;
 
     try {
       const { data, error } = await supabase
         .from('role_worker')
-        .update({ roleWorker, updated_at: new Date() })
+        .update({ roleworker })
         .eq('role_id', role_id)
         .select();
 
