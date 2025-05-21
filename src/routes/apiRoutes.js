@@ -3,10 +3,10 @@ const roleController = require('../controllers/roleController');
 const taskController = require('../controllers/taskController');
 const orderController = require('../controllers/orderController');
 
-const { userSchemas } = require('../validations/usersSchema');
-const { roleSchemas } = require('../validations/roleSchema');
-const { taskSchemas } = require('../validations/taskSchema');
-const { orderSchemas } = require('../validations/orderSchema');
+const userSchemas = require('../validations/userSchema');
+const roleSchemas = require('../validations/roleSchema');
+const taskSchemas= require('../validations/taskSchema');
+const orderSchemas = require('../validations/orderSchema');
 
 const authMiddleware = require('../lib/middleware/authMiddleware');
 const { ownerOnly, workerOnly } = require('../lib/middleware/roleMiddleware');
@@ -118,7 +118,6 @@ const routes = [
     handler: userController.getWorkers,
     options: {
       pre: [authMiddleware, ownerOnly],
-      validate: { payload: userSchemas.addWorker, failAction }
     }
   },
   {
