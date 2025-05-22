@@ -1,10 +1,21 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 // src/server.js
 require("dotenv").config();
 const Hapi = require("@hapi/hapi");
 const routes = require("./routes/apiRoutes");
 
+const { getRedisClient } = require("./utils/redisClient");
+
 const init = async () => {
+  // Inisialisasi Redis sebelum server mulai
+  try {
+    const redis = await getRedisClient();
+    console.log("Redis client connected successfully");
+  } catch (err) {
+    console.error("Failed to connect to Redis", err);
+  }
+
   const server = Hapi.server({
     host: "0.0.0.0",
     port: 3000,
