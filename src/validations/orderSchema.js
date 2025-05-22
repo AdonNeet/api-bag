@@ -4,7 +4,8 @@ const Joi = require('joi');
 const orderSchemas = {
   addOrder: Joi.object({
     order_name: Joi.string().required(),
-    typeOrder: Joi.string().required(),
+    typeorder: Joi.string().required(),
+    quantity: Joi.number().required(),
     note: Joi.string().allow('').optional(),
     start_date: Joi.date().required(),
     due_date: Joi.date().required()
@@ -12,15 +13,16 @@ const orderSchemas = {
 
   updateOrder: Joi.object({
     order_name: Joi.string().required(),
-    typeOrder: Joi.string().required(),
+    typeorder: Joi.string().required(),
+    quantity: Joi.number().optional(),
     note: Joi.string().allow('').optional(),
-    statusOrder: Joi.string().required(),
+    statusorder: Joi.string().required(),
     start_date: Joi.date().required(),
     due_date: Joi.date().required()
   }),
 
   updateStatus: Joi.object({
-    statusOrder: Joi.string().required()
+    statusorder: Joi.string().required()
   })
 }
 

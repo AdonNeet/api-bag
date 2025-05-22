@@ -49,7 +49,7 @@ const userController = {
 
     const { data: user, error } = await supabase
       .from("users")
-      .select("*")
+      .select("user_id, name, email")
       .eq(key, name)
       .eq("password", password)
       .maybeSingle();
@@ -127,7 +127,7 @@ const userController = {
   addWorker: async (request, h) => {
     const { name, email, password, role_id } = request.payload;
 
-    const { data: user, error: errorUser } = await supabase
+    const { data, error: errorUser } = await supabase
       .from("users")
       .insert({ name, email, password })
       .select("user_id")
@@ -144,7 +144,7 @@ const userController = {
 
     const { data: worker, error: errorWorker } = await supabase
       .from("workers")
-      .insert({ user_id: user.user_id, role_id })
+      .insert({ worker_id: data.user_id, role_id })
       .select()
       .single();
 
@@ -161,7 +161,7 @@ const userController = {
       .response({
         status: "success",
         message: "Worker berhasil ditambahkan",
-        data: { user, worker },
+        data: { user_id: data.user_id, worker },
       })
       .code(201);
   },
@@ -191,7 +191,7 @@ const userController = {
     const { data: worker, error: errorWorker } = await supabase
       .from("workers")
       .update({ role_id })
-      .eq("user_id", worker_id)
+      .eq("worker_id", worker_id)
       .select()
       .single();
 
@@ -280,7 +280,7 @@ const userController = {
   getWorkers: async (request, h) => {
     const { data, error } = await supabase
       .from("workers_with_user_info")
-      .select("worker_id, name, roleWorker, email, password");
+      .select("worker_id, name, roleworker, email, password");
 
     if (error) {
       return h.response({ status: "fail", message: error.message }).code(400);
@@ -294,7 +294,7 @@ const userController = {
 
     const { data, error } = await supabase
       .from("workers_with_user_info")
-      .select("worker_id, name, roleWorker, email, password")
+      .select("worker_id, name, roleworker, email, password")
       .eq("worker_id", worker_id)
       .maybeSingle();
 
@@ -312,7 +312,7 @@ const userController = {
 
     const { data, error } = await supabase
       .from("workers_with_user_info")
-      .select("worker_id, name, roleWorker, email, password")
+      .select("worker_id, name, roleworker, email, password")
       .eq('role_id', role_id);
 
     if (error) {

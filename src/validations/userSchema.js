@@ -32,9 +32,9 @@ const userSchemas = {
         password: Joi.string().min(6).optional(),
         role_id: Joi.number().integer().optional()
     }),
-  
+
     assignRole: Joi.object({
-      role_id: Joi.number().integer().required()
+        role_id: Joi.number().integer().required()
     })
 }
 

@@ -1,16 +1,29 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 // src/server.js
 require("dotenv").config();
 const Hapi = require("@hapi/hapi");
 const routes = require("./routes/apiRoutes");
 
+const { initRedis } = require("./config/redisClient");
+
 const init = async () => {
+  // Inisialisasi Redis sebelum server mulai
+  try {
+    initRedis();
+    console.log("Redis client connected successfully");
+  } catch (err) {
+    console.error("Failed to connect to Redis", err);
+  }
+
   const server = Hapi.server({
     host: "0.0.0.0",
     port: 3000,
     routes: {
       cors: {
         origin: ["*"],
+        additionalHeaders: ["x-api-key", "content-type", "authorization"],
+        additionalExposedHeaders: ["x-api-key"],
       },
     },
   });
@@ -23,6 +36,12 @@ const init = async () => {
     console.log(
       `Incoming request: ${request.method.toUpperCase()} ${request.path}`
     );
+
+    // Biar preflight OPTIONS gak divalidasi
+    if (request.method === "options") {
+      return h.continue;
+    }
+
     const apiKey = request.headers["x-api-key"];
 
     if (!apiKey || apiKey !== VALID_API_KEY) {

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const userController = require('../controllers/userController');
 const roleController = require('../controllers/roleController');
 const taskController = require('../controllers/taskController');
@@ -92,7 +93,7 @@ const routes = [
     handler: userController.updateWorker,
     options: {
       pre: [authMiddleware, ownerOnly],
-      validate: { payload: userSchemas.updateUser, failAction }
+      validate: { payload: userSchemas.updateWorker, failAction }
     }
   },
   {
@@ -101,7 +102,6 @@ const routes = [
     handler: userController.deleteWorker,
     options: {
       pre: [authMiddleware, ownerOnly],
-      validate: { payload: userSchemas.addWorker, failAction }
     }
   },
   {
@@ -125,7 +125,7 @@ const routes = [
     path: '/workers/{worker_id}',
     handler: userController.getWorkerInfo,
     options: {
-      pre: [authMiddleware, ownerOnly]
+      pre: [authMiddleware]
     }
   },
   {
@@ -185,7 +185,7 @@ const routes = [
   },
   {
     method: 'GET',
-    path: '/orders',
+    path: '/orders',  // /orders?page={int} paginations, 20 item
     handler: orderController.getOrders,
     options: {
       pre: [authMiddleware]
@@ -246,7 +246,7 @@ const routes = [
   },
   {
     method: 'GET',
-    path: '/tasks',
+    path: '/tasks',   // /tasks?page={int} paginations, 20 item
     handler: taskController.getTasks,
     options: {
       pre: [authMiddleware]
@@ -262,10 +262,10 @@ const routes = [
   },
   {
     method: 'GET',
-    path: '/tasks/order/worker/{worker_id}',
+    path: '/tasks/worker/{worker_id}',
     handler: taskController.getTasksByWorker,
     options: {
-      pre: [authMiddleware, workerOnly]
+      pre: [authMiddleware]
     }
   },
   {
