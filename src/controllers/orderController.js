@@ -1,4 +1,5 @@
 const supabase = require("../config/supabaseClient");
+const redis = require('../config/redisClient');
 
 const orderController = {
   // Buat Order
@@ -21,6 +22,11 @@ const orderController = {
       ]);
 
       if (error) throw error;
+
+      // Setelah operasi insert/update/delete berhasil
+      const keys = await redis.keys('orders:*'); // ambil semua cache task
+      if (keys.length) await redis.del(keys);
+
       return h.response({ message: "Order berhasil ditambahkan" }).code(201);
     } catch (err) {
       console.error(err);
@@ -36,6 +42,13 @@ const orderController = {
       const from = (page - 1) * limit;
       const to = from + limit - 1;
 
+      // Cek di Redis kalo tercache
+      const cacheKey = `orders:page:${page}`;
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return h.response(JSON.parse(cached)).code(200);
+      }
+
       const { data, error } = await supabase
         .from("orders")
         .select("*")
@@ -44,7 +57,10 @@ const orderController = {
 
       if (error) throw error;
 
-      return h.response({ page, data }).code(200);
+      const response = { page, data };
+      await redis.setEx(cacheKey, 604800, JSON.stringify(response)); // selama seminggu
+
+      return h.response(response).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: "Gagal mengambil data orders" }).code(500);
@@ -99,6 +115,11 @@ const orderController = {
         .eq("order_id", order_id);
 
       if (error) throw error;
+
+      // Setelah operasi insert/update/delete berhasil
+      const keys = await redis.keys('orders:*'); // ambil semua cache task
+      if (keys.length) await redis.del(keys);
+
       return h.response({ message: "Order berhasil diperbarui" }).code(200);
     } catch (err) {
       console.error(err);
@@ -115,6 +136,11 @@ const orderController = {
         .delete()
         .eq("order_id", order_id);
       if (error) throw error;
+
+      // Setelah operasi insert/update/delete berhasil
+      const keys = await redis.keys('orders:*'); // ambil semua cache task
+      if (keys.length) await redis.del(keys);
+
       return h.response({ message: "Order berhasil dihapus" }).code(200);
     } catch (err) {
       console.error(err);
@@ -134,6 +160,11 @@ const orderController = {
         .eq("order_id", order_id);
 
       if (error) throw error;
+
+      // Setelah operasi insert/update/delete berhasil
+      const keys = await redis.keys('orders:*'); // ambil semua cache task
+      if (keys.length) await redis.del(keys);
+
       return h
         .response({ message: "Status order berhasil diperbarui" })
         .code(200);

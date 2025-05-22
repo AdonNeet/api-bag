@@ -11,7 +11,7 @@ const init = async () => {
     routes: {
       cors: {
         origin: ["*"],
-        additionalHeaders: ["x-api-key", "content-type"],
+        additionalHeaders: ["x-api-key", "content-type", "authorization"],
         additionalExposedHeaders: ["x-api-key"],
       },
     },

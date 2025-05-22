@@ -1,4 +1,5 @@
 const supabase = require('../config/supabaseClient');
+const redis = require('../config/redisClient');
 
 const taskController = {
   // Tambah task baru
@@ -29,6 +30,10 @@ const taskController = {
 
       if (error) throw error;
 
+      // Setelah operasi insert/update/delete berhasil
+      const keys = await redis.keys('tasks:*'); // ambil semua cache task
+      if (keys.length) await redis.del(keys);
+
       return h.response({ message: 'Task berhasil ditambahkan' }).code(201);
     } catch (err) {
       console.error(err);
@@ -37,12 +42,19 @@ const taskController = {
   },
 
   // Ambil tasks dengan pagination, urut dari task terbaru
-  getTasks: async (request, h) => {
+  getTasks: async (request, h) => {  
     try {
       const page = parseInt(request.query.page) || 1;
       const limit = 20;
       const from = (page - 1) * limit;
       const to = from + limit - 1;
+
+      // Cek di Redis kalo tercache
+      const cacheKey = `tasks:page:${page}`;
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return h.response(JSON.parse(cached)).code(200);
+      }
 
       const { data, error } = await supabase
         .from('tasks_with_worker_name')
@@ -64,7 +76,10 @@ const taskController = {
 
       if (error) throw error;
 
-      return h.response({ page, data }).code(200);
+      const response = { page, data };
+      await redis.setEx(cacheKey, 604800, JSON.stringify(response)); // selama seminggu
+
+      return h.response(response).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: 'Gagal mengambil tasks' }).code(500);
@@ -77,6 +92,18 @@ const taskController = {
     const { order_id } = request.params;
 
     try {
+      const page = parseInt(request.query.page) || 1;
+      const limit = 20;
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      // Cek di Redis kalo tercache
+      const cacheKey = `tasks:order:${order_id}:page:${page}`;
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return h.response(JSON.parse(cached)).code(200);
+      }
+
       const { data, error } = await supabase
         .from('tasks_with_worker_name') // ini view
         .select(`
@@ -92,11 +119,16 @@ const taskController = {
           start_date, 
           due_date
         `)
-        .eq('order_id', order_id);
+        .eq('order_id', order_id)
+        .order('task_id', { ascending: false }) // urut dari task_id terbaru
+        .range(from, to);
 
       if (error) throw error;
 
-      return h.response(data).code(200);
+      const response = { page, data };
+      await redis.setEx(cacheKey, 604800, JSON.stringify(response)); // selama seminggu
+
+      return h.response(response).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: 'Gagal mengambil task berdasarkan order' }).code(500);
@@ -109,6 +141,18 @@ const taskController = {
     const { worker_id } = request.params;
 
     try {
+      const page = parseInt(request.query.page) || 1;
+      const limit = 20;
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      // Cek di Redis kalo tercache
+      const cacheKey = `tasks:worker:${worker_id}:page:${page}`;
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return h.response(JSON.parse(cached)).code(200);
+      }
+
       const { data, error } = await supabase
         .from('tasks_with_worker_name') // ini view
         .select(`
@@ -123,11 +167,16 @@ const taskController = {
           start_date, 
           due_date
         `)
-        .eq('worker_id', worker_id);
+        .eq('worker_id', worker_id)
+        .order('task_id', { ascending: false }) // urut dari task_id terbaru
+        .range(from, to);
 
       if (error) throw error;
 
-      return h.response(data).code(200);
+      const response = { page, data };
+      await redis.setEx(cacheKey, 604800, JSON.stringify(response)); // selama seminggu
+
+      return h.response(response).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: 'Gagal mengambil task berdasarkan worker' }).code(500);
@@ -193,6 +242,10 @@ const taskController = {
 
       if (error) throw error;
 
+      // Setelah operasi insert/update/delete berhasil
+      const keys = await redis.keys('tasks:*'); // ambil semua cache task
+      if (keys.length) await redis.del(keys);
+
       return h.response({ message: 'Task berhasil diperbarui' }).code(200);
     } catch (err) {
       console.error(err);
@@ -211,6 +264,10 @@ const taskController = {
         .eq('task_id', task_id);
 
       if (error) throw error;
+
+      // Setelah operasi insert/update/delete berhasil
+      const keys = await redis.keys('tasks:*'); // ambil semua cache task
+      if (keys.length) await redis.del(keys);
 
       return h.response({ message: 'Task berhasil dihapus' }).code(200);
     } catch (err) {
