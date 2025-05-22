@@ -7,7 +7,7 @@ async function getRedisClient() {
   if (!redisClient) {
     redisClient = createClient({
       url: process.env.REDIS_URL,
-      password: process.env.REDIS_PASSWORD || undefined,
+      password: process.env.REDIS_PASS || undefined,
     });
 
     redisClient.on('error', (err) => {
