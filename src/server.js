@@ -5,7 +5,7 @@ require("dotenv").config();
 const Hapi = require("@hapi/hapi");
 const routes = require("./routes/apiRoutes");
 
-const { getRedisClient } = require("./utils/redisClient");
+const { getRedisClient } = require("./config/redisClient");
 
 const init = async () => {
   // Inisialisasi Redis sebelum server mulai
