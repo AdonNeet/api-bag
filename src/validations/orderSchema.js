@@ -5,7 +5,7 @@ const orderSchemas = {
   addOrder: Joi.object({
     order_name: Joi.string().required(),
     typeorder: Joi.string().required(),
-    quantity: Joi.string().required(),
+    quantity: Joi.number().required(),
     note: Joi.string().allow('').optional(),
     start_date: Joi.date().required(),
     due_date: Joi.date().required()
@@ -14,7 +14,7 @@ const orderSchemas = {
   updateOrder: Joi.object({
     order_name: Joi.string().required(),
     typeorder: Joi.string().required(),
-    quantity: Joi.string().optional(),
+    quantity: Joi.number().optional(),
     note: Joi.string().allow('').optional(),
     statusOrder: Joi.string().required(),
     start_date: Joi.date().required(),
