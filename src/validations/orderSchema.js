@@ -14,7 +14,7 @@ const orderSchemas = {
   updateOrder: Joi.object({
     order_name: Joi.string().required(),
     typeorder: Joi.string().required(),
-    quantity: Joi.number().optional(),
+    quantity: Joi.number().required(),
     note: Joi.string().allow('').optional(),
     statusorder: Joi.string().required(),
     start_date: Joi.date().required(),

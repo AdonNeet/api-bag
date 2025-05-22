@@ -16,8 +16,13 @@ const taskSchemas = {
     role_id: Joi.number().integer().required(),
     quantity: Joi.number().integer().required(),
     note: Joi.string().allow('').optional(),
+    statustask: Joi.string().required(),
     start_date: Joi.date().required(),
     due_date: Joi.date().required()
+  }),
+
+  updateStatus: Joi.object({
+    statustask: Joi.string().required(),
   })
 }
 
