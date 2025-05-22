@@ -1,20 +1,29 @@
 /* eslint-disable no-undef */
 const { createClient } = require('redis');
 
-const client = createClient({
-  username: process.env.REDIS_UNAME,
-  password: process.env.REDIS_PASS,
-  socket: {
-    host: process.env.REDIS_HOST,
-    port: Number(process.env.REDIS_PORT),
-  },
-});
+let redisClient;
 
-client.on('error', (err) => console.log('Redis Client Error', err));
+async function getRedisClient() {
+  if (!redisClient) {
+    redisClient = createClient({
+      username: process.env.REDIS_UNAME,
+      password: process.env.REDIS_PASS,
+      socket: {
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT), // pastikan ini number ya
+      },
+    });
 
-// konek di luar supaya siap dipakai
-(async () => {
-  await client.connect();
-})();
+    redisClient.on('error', (err) => {
+      console.error('Redis Client Error', err);
+    });
 
-module.exports = client;
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+    }
+  }
+
+  return redisClient;
+}
+
+module.exports = { getRedisClient };

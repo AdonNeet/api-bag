@@ -1,9 +1,11 @@
 const supabase = require("../config/supabaseClient");
-const redis = require('../config/redisClient');
+const { getRedisClient } = require('../config/redisClient');
 
 const orderController = {
   // Buat Order
   addOrder: async (request, h) => {
+    const redis = await getRedisClient();
+
     try {
       const { order_name, typeorder, note, start_date, due_date } =
         request.payload;
@@ -36,6 +38,8 @@ const orderController = {
 
   // Ambil orders dengan pagination
   getOrders: async (request, h) => {
+    const redis = await getRedisClient();
+
     try {
       const page = parseInt(request.query.page) || 1;
       const limit = 20;
@@ -88,6 +92,7 @@ const orderController = {
 
   // Update Order Lengkap
   updateOrder: async (request, h) => {
+    const redis = await getRedisClient();
     const { order_id } = request.params;
     const {
       order_name,
@@ -129,6 +134,7 @@ const orderController = {
 
   // Hapus Order
   deleteOrder: async (request, h) => {
+    const redis = await getRedisClient();
     const { order_id } = request.params;
     try {
       const { error } = await supabase
@@ -150,6 +156,7 @@ const orderController = {
 
   // Update Status Order
   updateOrderStatus: async (request, h) => {
+    const redis = await getRedisClient();
     const { order_id } = request.params;
     const { statusorder } = request.payload;
 
