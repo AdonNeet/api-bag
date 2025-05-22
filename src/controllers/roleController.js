@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 const supabase = require('../config/supabaseClient');
 
 const roleController = {
@@ -64,6 +65,13 @@ const roleController = {
     const { role_id } = request.params;
 
     try {
+      const { error: updateError} = await supabase
+        .from("workers")
+        .update({ role_id: 1 })
+        .eq("role_id", role_id);
+
+      if (updateError) throw updateError;
+
       const { data, error } = await supabase
         .from('role_worker')
         .delete()
