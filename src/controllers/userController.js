@@ -127,7 +127,7 @@ const userController = {
   addWorker: async (request, h) => {
     const { name, email, password, role_id } = request.payload;
 
-    const { data: user, error: errorUser } = await supabase
+    const { datax, error: errorUser } = await supabase
       .from("users")
       .insert({ name, email, password })
       .select("user_id")
@@ -144,7 +144,7 @@ const userController = {
 
     const { data: worker, error: errorWorker } = await supabase
       .from("workers")
-      .insert({ user_id: user.user_id, role_id })
+      .insert({ user_id: datax.user_id, role_id })
       .select()
       .single();
 
@@ -161,7 +161,7 @@ const userController = {
       .response({
         status: "success",
         message: "Worker berhasil ditambahkan",
-        data: { user, worker },
+        data: { user_id: datax.user_id, worker },
       })
       .code(201);
   },
