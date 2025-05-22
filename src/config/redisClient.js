@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // utils/redisClient.js
 /* eslint-disable no-undef */
 const { createClient } = require("redis");

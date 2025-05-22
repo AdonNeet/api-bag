@@ -7,15 +7,22 @@ const orderController = {
     const redis = await getRedis();
 
     try {
-      const { order_name, typeorder, note, start_date, due_date } =
-        request.payload;
-      const { owner_id } = request.auth;
+      const { 
+        order_name, 
+        typeorder, 
+        quantity, 
+        note, 
+        start_date, 
+        due_date 
+      } = request.payload;
+      const { user_id } = request.auth;
 
       const { error } = await supabase.from("orders").insert([
         {
-          owner_id,
+          owner_id : user_id,
           order_name,
           typeorder,
+          quantity,
           note,
           statusorder: "Produksi",
           start_date,
@@ -98,20 +105,22 @@ const orderController = {
     const {
       order_name,
       typeorder,
+      quantity,
       note,
       statusorder,
       start_date,
       due_date,
     } = request.payload;
-    const { owner_id } = request.auth;
+    const { user_id } = request.auth;
 
     try {
       const { error } = await supabase
         .from("orders")
         .update({
-          owner_id,
+          owner_id : user_id,
           order_name,
           typeorder,
+          quantity,
           note,
           statusorder,
           start_date,
