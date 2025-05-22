@@ -1,10 +1,10 @@
 const supabase = require('../config/supabaseClient');
-const { getRedisClient } = require('../config/redisClient');
+const { getRedis } = require('../config/redisClient');
 
 const taskController = {
   // Tambah task baru
   addTask: async (request, h) => {
-    const redis = await getRedisClient();
+    const redis = await getRedis();
 
     const {
       order_id,
@@ -45,7 +45,7 @@ const taskController = {
 
   // Ambil tasks dengan pagination, urut dari task terbaru
   getTasks: async (request, h) => {  
-    const redis = await getRedisClient();
+    const redis = await getRedis();
 
     try {
       const page = parseInt(request.query.page) || 1;
@@ -93,7 +93,7 @@ const taskController = {
 
   // Ambil semua task berdasarkan order dari VIEW
   getTasksByOrder: async (request, h) => {
-    const redis = await getRedisClient();
+    const redis = await getRedis();
     const { order_id } = request.params;
 
     try {
@@ -143,7 +143,7 @@ const taskController = {
 
   // Ambil semua task berdasarkan worker_id
   getTasksByWorker: async (request, h) => {
-    const redis = await getRedisClient();
+    const redis = await getRedis();
     const { worker_id } = request.params;
 
     try {
@@ -223,7 +223,7 @@ const taskController = {
 
   // Update task (note, tanggal, quantity, role)
   updateTask: async (request, h) => {
-    const redis = await getRedisClient();
+    const redis = await getRedis();
     const { task_id } = request.params;
     const {
       role_id,
@@ -262,7 +262,7 @@ const taskController = {
 
   // Hapus task
   deleteTask: async (request, h) => {
-    const redis = await getRedisClient();
+    const redis = await getRedis();
     const { task_id } = request.params;
 
     try {

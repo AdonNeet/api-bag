@@ -1,29 +1,39 @@
+/* eslint-disable no-unused-vars */
+// utils/redisClient.js
 /* eslint-disable no-undef */
-const { createClient } = require('redis');
+const { createClient } = require("redis");
 
-let redisClient;
-
-async function getRedisClient() {
-  if (!redisClient) {
-    redisClient = createClient({
+async function initRedis() {
+  if (!global.redisClient) {
+    const client = createClient({
       username: process.env.REDIS_UNAME,
       password: process.env.REDIS_PASS,
       socket: {
         host: process.env.REDIS_HOST,
-        port: parseInt(process.env.REDIS_PORT), // pastikan ini number ya
+        port: parseInt(process.env.REDIS_PORT),
       },
     });
 
-    redisClient.on('error', (err) => {
-      console.error('Redis Client Error', err);
+    client.on("error", (err) => {
+      console.error("Redis Client Error", err);
     });
 
-    if (!redisClient.isOpen) {
-      await redisClient.connect();
+    if (!client.isOpen) {
+      await client.connect();
     }
+
+    global.redisClient = client;
+    console.log("Redis initialized globally");
   }
 
-  return redisClient;
+  return global.redisClient;
 }
 
-module.exports = { getRedisClient };
+async function getRedis() {
+  if (!global.redisClient || !global.redisClient.isOpen) {
+    await initRedis();
+  }
+  return global.redisClient;
+}
+
+module.exports = { initRedis, getRedis };

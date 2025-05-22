@@ -191,7 +191,7 @@ const userController = {
     const { data: worker, error: errorWorker } = await supabase
       .from("workers")
       .update({ role_id })
-      .eq("user_id", worker_id)
+      .eq("worker_id", worker_id)
       .select()
       .single();
 

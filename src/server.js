@@ -5,12 +5,12 @@ require("dotenv").config();
 const Hapi = require("@hapi/hapi");
 const routes = require("./routes/apiRoutes");
 
-const { getRedisClient } = require("./config/redisClient");
+const { initRedis } = require("./config/redisClient");
 
 const init = async () => {
   // Inisialisasi Redis sebelum server mulai
   try {
-    const redis = await getRedisClient();
+    initRedis();
     console.log("Redis client connected successfully");
   } catch (err) {
     console.error("Failed to connect to Redis", err);

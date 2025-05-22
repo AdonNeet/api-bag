@@ -93,7 +93,7 @@ const routes = [
     handler: userController.updateWorker,
     options: {
       pre: [authMiddleware, ownerOnly],
-      validate: { payload: userSchemas.updateUser, failAction }
+      validate: { payload: userSchemas.updateWorker, failAction }
     }
   },
   {
