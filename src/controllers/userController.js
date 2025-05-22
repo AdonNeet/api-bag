@@ -144,7 +144,7 @@ const userController = {
 
     const { data: worker, error: errorWorker } = await supabase
       .from("workers")
-      .insert({ user_id: data.user_id, role_id })
+      .insert({ worker_id: data.user_id, role_id })
       .select()
       .single();
 
