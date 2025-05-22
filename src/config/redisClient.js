@@ -6,12 +6,8 @@ let redisClient;
 async function getRedisClient() {
   if (!redisClient) {
     redisClient = createClient({
-      username: process.env.REDIS_UNAME,
-      password: process.env.REDIS_PASS,
-      socket: {
-        host: process.env.REDIS_HOST,
-        port: Number(process.env.REDIS_PORT), // pastikan ini number ya
-      },
+      url: process.env.REDIS_URL,
+      password: process.env.REDIS_PASSWORD || undefined,
     });
 
     redisClient.on('error', (err) => {
