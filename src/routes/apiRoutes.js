@@ -286,6 +286,15 @@ const routes = [
     }
   },
   {
+    method: 'PUT',
+    path: '/tasks/{task_id}/status',
+    handler: taskController.updateTaskStatus,
+    options: {
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: taskSchemas.updateStatus, failAction }
+    }
+  },
+  {
     method: 'DELETE',
     path: '/tasks/{task_id}',
     handler: taskController.deleteTask,

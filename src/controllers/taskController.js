@@ -23,8 +23,8 @@ const taskController = {
           order_id,
           worker_id,
           role_id,
-          statustask: 'produksi', // default
-          quantity,
+          statustask: 'Belum Mulai', // default
+          quantity: quantity ?? 0,
           note,
           start_date,
           due_date
@@ -239,7 +239,7 @@ const taskController = {
         .from('tasks')
         .update({
           role_id,
-          quantity,
+          quantity: quantity ?? 0,
           note,
           statustask,
           start_date,
@@ -259,6 +259,32 @@ const taskController = {
       return h.response({ message: 'Gagal memperbarui task' }).code(500);
     }
   },
+
+  // Update status task saja
+  updateTaskStatus: async (request, h) => {
+    const redis = await getRedis();
+    const { task_id } = request.params;
+    const { statustask } = request.payload;
+
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ statustask })
+        .eq('task_id', task_id);
+
+      if (error) throw error;
+
+      // Invalidate semua cache task
+      const keys = await redis.keys('tasks:*');
+      if (keys.length) await redis.del(keys);
+
+      return h.response({ message: 'Status task berhasil diperbarui' }).code(200);
+    } catch (err) {
+      console.error(err);
+      return h.response({ message: 'Gagal memperbarui status task' }).code(500);
+    }
+  },
+
 
   // Hapus task
   deleteTask: async (request, h) => {
