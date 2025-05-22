@@ -16,7 +16,7 @@ const orderSchemas = {
     typeorder: Joi.string().required(),
     quantity: Joi.number().optional(),
     note: Joi.string().allow('').optional(),
-    statusOrder: Joi.string().required(),
+    statusorder: Joi.string().required(),
     start_date: Joi.date().required(),
     due_date: Joi.date().required()
   }),
