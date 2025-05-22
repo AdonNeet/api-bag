@@ -17,7 +17,7 @@ const orderController = {
           order_name,
           typeorder,
           note,
-          statusorder: "produksi",
+          statusorder: "Produksi",
           start_date,
           due_date,
         },
