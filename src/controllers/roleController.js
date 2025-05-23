@@ -49,7 +49,8 @@ const roleController = {
     try {
       const { data, error } = await supabase
         .from('role_worker')
-        .select('*');
+        .select('*')
+        .order('role_id', { ascending: true });
 
       if (error) throw error;
 

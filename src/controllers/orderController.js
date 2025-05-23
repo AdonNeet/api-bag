@@ -2,7 +2,7 @@ const supabase = require("../config/supabaseClient");
 const { getRedis } = require('../config/redisClient');
 
 const orderController = {
-  // Buat Order
+  // Tambah order baru
   addOrder: async (request, h) => {
     const redis = await getRedis();
 
@@ -17,23 +17,42 @@ const orderController = {
       } = request.payload;
       const { user_id } = request.auth;
 
+      const safeStartDate = new Date(start_date).toISOString();
+      const safeDueDate = new Date(due_date).toISOString();
+
+      // Cek apakah ada order lain yang tanggalnya overlap
+      const { data: existingOrders, error: overlapError } = await supabase
+        .from("orders")
+        .select("order_id")
+        .in("statusorder", ["Pesanan Baru", "Dikerjakan"])
+        .lte("start_date", safeDueDate)
+        .gte("due_date", safeStartDate);
+
+
+      if (overlapError) throw overlapError;
+
+      if (existingOrders.length > 0) {
+        return h.response({
+          message: "Gagal menambahkan order: Terdapat pesanan lain dalam rentang tanggal tersebut.",
+        }).code(400);
+      }
+
       const { error } = await supabase.from("orders").insert([
         {
-          owner_id : user_id,
+          owner_id: user_id,
           order_name,
           typeorder,
           quantity,
           note,
           statusorder: "Pesanan Baru",
-          start_date,
-          due_date,
+          start_date: safeStartDate,
+          due_date: safeDueDate,
         },
       ]);
 
       if (error) throw error;
 
-      // Setelah operasi insert/update/delete berhasil
-      const keys = await redis.keys('orders:*'); // ambil semua cache task
+      const keys = await redis.keys('orders:*');
       if (keys.length) await redis.del(keys);
 
       return h.response({ message: "Order berhasil ditambahkan" }).code(201);
@@ -113,26 +132,47 @@ const orderController = {
     } = request.payload;
     const { user_id } = request.auth;
 
+    const safeStartDate = new Date(start_date).toISOString();
+    const safeDueDate = new Date(due_date).toISOString();
+
     try {
+      // Cek overlapping order tapi jangan bandingin sama dirinya sendiri
+      const { data: existingOrders, error: overlapError } = await supabase
+        .from("orders")
+        .select("order_id")
+        .neq("order_id", order_id) // penting: jangan cek ke dirinya sendiri
+        .in("statusorder", ["Pesanan Baru", "Dikerjakan"])
+        .lte("start_date", safeDueDate)
+        .gte("due_date", safeStartDate);
+
+
+      if (overlapError) throw overlapError;
+
+      if (existingOrders.length > 0) {
+        return h.response({
+          message: "Gagal memperbarui order: Terdapat pesanan lain dalam rentang tanggal tersebut.",
+        }).code(400);
+      }
+
+      // Update order
       const { error } = await supabase
         .from("orders")
         .update({
-          owner_id : user_id,
+          owner_id: user_id,
           order_name,
           typeorder,
           quantity,
           note,
           statusorder,
-          start_date,
-          due_date,
+          start_date: safeStartDate,
+          due_date: safeDueDate,
           updated_at: new Date(),
         })
         .eq("order_id", order_id);
 
       if (error) throw error;
 
-      // Setelah operasi insert/update/delete berhasil
-      const keys = await redis.keys('orders:*'); // ambil semua cache task
+      const keys = await redis.keys('orders:*');
       if (keys.length) await redis.del(keys);
 
       return h.response({ message: "Order berhasil diperbarui" }).code(200);
@@ -141,6 +181,7 @@ const orderController = {
       return h.response({ message: "Gagal memperbarui order" }).code(500);
     }
   },
+
 
   // Hapus Order
   deleteOrder: async (request, h) => {
