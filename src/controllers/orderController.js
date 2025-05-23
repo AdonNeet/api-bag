@@ -37,25 +37,28 @@ const orderController = {
         }).code(400);
       }
 
-      const { error } = await supabase.from("orders").insert([
-        {
+      const { data, error } = await supabase
+        .from("orders")
+        .insert([{
           owner_id: user_id,
           order_name,
           typeorder,
-          quantity,
+          quantity: quantity ?? 0,
           note,
           statusorder: "Pesanan Baru",
           start_date: safeStartDate,
           due_date: safeDueDate,
-        },
-      ]);
+        }])
+        .select('order_id')
+        .maybeSingle();
 
       if (error) throw error;
 
+      // Setelah operasi insert/update/delete berhasil
       const keys = await redis.keys('orders:*');
       if (keys.length) await redis.del(keys);
 
-      return h.response({ message: "Order berhasil ditambahkan" }).code(201);
+      return h.response({ message: "Order berhasil ditambahkan", order_id: data.order_id }).code(201);
     } catch (err) {
       console.error(err);
       return h.response({ message: "Gagal menambahkan order" }).code(500);
@@ -145,7 +148,6 @@ const orderController = {
         .lte("start_date", safeDueDate)
         .gte("due_date", safeStartDate);
 
-
       if (overlapError) throw overlapError;
 
       if (existingOrders.length > 0) {
@@ -155,27 +157,30 @@ const orderController = {
       }
 
       // Update order
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("orders")
         .update({
           owner_id: user_id,
           order_name,
           typeorder,
-          quantity,
+          quantity: quantity ?? 0,
           note,
           statusorder,
           start_date: safeStartDate,
           due_date: safeDueDate,
           updated_at: new Date(),
         })
-        .eq("order_id", order_id);
+        .eq('order_id', order_id)
+        .select('order_id')
+        .maybeSingle();
 
       if (error) throw error;
 
+      // Setelah operasi insert/update/delete berhasil
       const keys = await redis.keys('orders:*');
       if (keys.length) await redis.del(keys);
 
-      return h.response({ message: "Order berhasil diperbarui" }).code(200);
+      return h.response({ message: "Order berhasil diperbarui", order_id: data.order_idNow }).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: "Gagal memperbarui order" }).code(500);

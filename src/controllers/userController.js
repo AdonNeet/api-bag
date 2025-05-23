@@ -10,14 +10,14 @@ const userController = {
     const { data, error } = await supabase
       .from("users")
       .insert({ name, email, password })
-      .select()
+      .select('user_id')
       .single();
 
     if (error) {
       return h.response({ status: "fail", message: error.message }).code(400);
     }
 
-    return h.response({ status: "success", data }).code(201);
+    return h.response({ status: "success", user_id: data.user_id }).code(201);
   },
 
   updateUser: async (request, h) => {
@@ -28,7 +28,7 @@ const userController = {
       .from("users")
       .update({ name, email, password })
       .eq("user_id", user_id)
-      .select()
+      .select('user_id')
       .single();
 
     if (error || !data) {
@@ -40,7 +40,7 @@ const userController = {
         .code(404);
     }
 
-    return h.response({ status: "success", data }).code(200);
+    return h.response({ status: "success", user_id: data.user_id }).code(200);
   },
 
   login: async (request, h) => {
@@ -113,14 +113,95 @@ const userController = {
   // --------------------- OWNERS ---------------------
   getOwnerAll: async (request, h) => {
     const { data, error } = await supabase
-      .from("owners")
-      .select("owner_id, user_id");
+      .from('owners_with_user_info')
+      .select('owner_id, name, email, password');
 
     if (error) {
       return h.response({ status: "fail", message: error.message }).code(400);
     }
 
     return h.response({ status: "success", data }).code(200);
+  },
+
+  addOwner: async (request, h) => {
+    const { name, email, password } = request.payload;
+
+    const { data, error: errorUser } = await supabase
+      .from("users")
+      .insert({ name, email, password })
+      .select("user_id")
+      .single();
+
+    if (errorUser) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal menambahkan user: ${errorUser.message}`,
+        })
+        .code(400);
+    }
+
+    const { data: owner, error: errorOwner } = await supabase
+      .from("owners")
+      .insert({ owner_id: data.user_id })
+      .select()
+      .single();
+
+    if (errorOwner) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal menambahkan worker: ${errorOwner.message}`,
+        })
+        .code(400);
+    }
+
+    return h
+      .response({
+        status: "success",
+        message: "Owner berhasil ditambahkan",
+        data: { user_id: data.user_id, owner },
+      })
+      .code(201);
+  },
+
+  deleteOwner: async (request, h) => {
+    const { owner_id } = request.params;
+
+    const { error: errorOwner } = await supabase
+      .from("owners")
+      .delete()
+      .eq("owner_id", owner_id);
+
+    if (errorOwner) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal menghapus data owner: ${errorOwner.message}`,
+        })
+        .code(400);
+    }
+
+    const { error: errorUser } = await supabase
+      .from("users")
+      .delete()
+      .eq("user_id", owner_id);
+
+    if (errorUser) {
+      return h
+        .response({
+          status: "fail",
+          message: `Gagal menghapus data user: ${errorUser.message}`,
+        })
+        .code(400);
+    }
+
+    return h
+      .response({
+        status: "success",
+        message: "Owner dan user berhasil dihapus",
+      })
+      .code(200);
   },
 
   // --------------------- WORKERS ---------------------
