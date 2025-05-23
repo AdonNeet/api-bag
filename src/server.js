@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 // src/server.js
 require("dotenv").config();

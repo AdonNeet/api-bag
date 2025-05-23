@@ -4,9 +4,9 @@ const { getRedis } = require('../config/redisClient');
 const orderController = {
   // Tambah order baru
   addOrder: async (request, h) => {
-    const redis = await getRedis();
-
     try {
+      const redis = await getRedis();
+
       const { 
         order_name, 
         typeorder, 
@@ -20,6 +20,12 @@ const orderController = {
       const safeStartDate = new Date(start_date).toISOString();
       const safeDueDate = new Date(due_date).toISOString();
 
+      if (new Date(safeDueDate) < new Date(safeStartDate)) {
+        return h.response({
+          message: "Gagal menambahkan order: Tanggal selesai (due_date) harus setelah atau sama dengan tanggal mulai (start_date)!",
+        }).code(400);
+      }
+
       // Cek apakah ada order lain yang tanggalnya overlap
       const { data: existingOrders, error: overlapError } = await supabase
         .from("orders")
@@ -27,7 +33,6 @@ const orderController = {
         .in("statusorder", ["Pesanan Baru", "Dikerjakan"])
         .lte("start_date", safeDueDate)
         .gte("due_date", safeStartDate);
-
 
       if (overlapError) throw overlapError;
 
@@ -67,9 +72,9 @@ const orderController = {
 
   // Ambil orders dengan pagination
   getOrders: async (request, h) => {
-    const redis = await getRedis();
-
     try {
+      const redis = await getRedis();
+
       const page = parseInt(request.query.page) || 1;
       const limit = 20;
       const from = (page - 1) * limit;
@@ -103,8 +108,9 @@ const orderController = {
 
   // Detail Order
   getOrderInfo: async (request, h) => {
-    const { order_id } = request.params;
     try {
+      const { order_id } = request.params;
+      
       const { data, error } = await supabase
         .from("orders")
         .select("*")
@@ -121,24 +127,30 @@ const orderController = {
 
   // Update Order Lengkap
   updateOrder: async (request, h) => {
-    const redis = await getRedis();
-
-    const { order_id } = request.params;
-    const {
-      order_name,
-      typeorder,
-      quantity,
-      note,
-      statusorder,
-      start_date,
-      due_date,
-    } = request.payload;
-    const { user_id } = request.auth;
-
-    const safeStartDate = new Date(start_date).toISOString();
-    const safeDueDate = new Date(due_date).toISOString();
-
     try {
+      const redis = await getRedis();
+
+      const { order_id } = request.params;
+      const {
+        order_name,
+        typeorder,
+        quantity,
+        note,
+        statusorder,
+        start_date,
+        due_date,
+      } = request.payload;
+      const { user_id } = request.auth;
+
+      const safeStartDate = new Date(start_date).toISOString();
+      const safeDueDate = new Date(due_date).toISOString();
+
+      if (new Date(safeDueDate) < new Date(safeStartDate)) {
+        return h.response({
+          message: "Gagal memperbarui order: Tanggal selesai (due_date) harus setelah atau sama dengan tanggal mulai (start_date)!",
+        }).code(400);
+      }
+
       // Cek overlapping order tapi jangan bandingin sama dirinya sendiri
       const { data: existingOrders, error: overlapError } = await supabase
         .from("orders")
@@ -190,10 +202,10 @@ const orderController = {
 
   // Hapus Order
   deleteOrder: async (request, h) => {
-    const redis = await getRedis();
-
-    const { order_id } = request.params;
     try {
+      const redis = await getRedis();
+
+      const { order_id } = request.params;
       const { error } = await supabase
         .from("orders")
         .delete()
@@ -213,12 +225,12 @@ const orderController = {
 
   // Update Status Order
   updateOrderStatus: async (request, h) => {
-    const redis = await getRedis();
-    
-    const { order_id } = request.params;
-    const { statusorder } = request.payload;
-
     try {
+      const redis = await getRedis();
+    
+      const { order_id } = request.params;
+      const { statusorder } = request.payload;
+
       const { error } = await supabase
         .from("orders")
         .update({ statusorder })

@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 const supabase = require('../config/supabaseClient');
 
 const roleController = {
