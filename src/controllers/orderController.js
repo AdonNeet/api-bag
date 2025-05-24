@@ -26,22 +26,6 @@ const orderController = {
         }).code(400);
       }
 
-      // Cek apakah ada order lain yang tanggalnya overlap
-      const { data: existingOrders, error: overlapError } = await supabase
-        .from("orders")
-        .select("order_id")
-        .in("statusorder", ["Pesanan Baru", "Dikerjakan"])
-        .lte("start_date", safeDueDate)
-        .gte("due_date", safeStartDate);
-
-      if (overlapError) throw overlapError;
-
-      if (existingOrders.length > 0) {
-        return h.response({
-          message: "Gagal menambahkan order: Terdapat pesanan lain dalam rentang tanggal tersebut.",
-        }).code(400);
-      }
-
       const { data, error } = await supabase
         .from("orders")
         .insert([{
