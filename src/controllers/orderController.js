@@ -135,23 +135,6 @@ const orderController = {
         }).code(400);
       }
 
-      // Cek overlapping order tapi jangan bandingin sama dirinya sendiri
-      const { data: existingOrders, error: overlapError } = await supabase
-        .from("orders")
-        .select("order_id")
-        .neq("order_id", order_id) // penting: jangan cek ke dirinya sendiri
-        .in("statusorder", ["Pesanan Baru", "Dikerjakan"])
-        .lte("start_date", safeDueDate)
-        .gte("due_date", safeStartDate);
-
-      if (overlapError) throw overlapError;
-
-      if (existingOrders.length > 0) {
-        return h.response({
-          message: "Gagal memperbarui order: Terdapat pesanan lain dalam rentang tanggal tersebut.",
-        }).code(400);
-      }
-
       // Update order
       const { data, error } = await supabase
         .from("orders")
