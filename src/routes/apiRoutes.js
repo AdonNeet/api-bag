@@ -80,6 +80,23 @@ const routes = [
   },
   {
     method: 'POST',
+    path: '/owners',
+    handler: userController.addOwner,
+    options: {
+      pre: [authMiddleware, ownerOnly],
+      validate: { payload: userSchemas.addOwner, failAction }
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/owners/{owner_id}',
+    handler: userController.deleteOwner,
+    options: {
+      pre: [authMiddleware, ownerOnly],
+    }
+  },
+  {
+    method: 'POST',
     path: '/workers',
     handler: userController.addWorker,
     options: {

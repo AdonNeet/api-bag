@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 const supabase = require('../config/supabaseClient');
 
 const roleController = {
@@ -49,7 +48,8 @@ const roleController = {
     try {
       const { data, error } = await supabase
         .from('role_worker')
-        .select('*');
+        .select('*')
+        .order('role_id', { ascending: true });
 
       if (error) throw error;
 

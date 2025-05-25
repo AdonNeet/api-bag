@@ -19,6 +19,12 @@ const userSchemas = {
         password: Joi.string().required()
     }),
 
+    addOwner: Joi.object({
+        name: Joi.string().min(3).required(),
+        email: Joi.string().min(3).required(),
+        password: Joi.string().min(6).required(),
+    }),
+
     addWorker: Joi.object({
         name: Joi.string().min(3).required(),
         email: Joi.string().min(3).required(),

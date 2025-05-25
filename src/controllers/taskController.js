@@ -4,20 +4,46 @@ const { getRedis } = require('../config/redisClient');
 const taskController = {
   // Tambah task baru
   addTask: async (request, h) => {
-    const redis = await getRedis();
-
-    const {
-      order_id,
-      worker_id,
-      role_id,
-      quantity,
-      note,
-      start_date,
-      due_date
-    } = request.payload;
-
     try {
-      const { error } = await supabase
+      const redis = await getRedis();
+
+      const {
+        order_id,
+        worker_id,
+        role_id,
+        quantity,
+        note,
+        start_date,
+        due_date
+      } = request.payload;
+
+      const safeStartDate = new Date(start_date).toISOString();
+      const safeDueDate = new Date(due_date).toISOString();
+
+      if (new Date(safeDueDate) < new Date(safeStartDate)) {
+        return h.response({
+          message: "Gagal menambahkan task: Tanggal selesai (due_date) harus setelah atau sama dengan tanggal mulai (start_date)!",
+        }).code(400);
+      }
+
+      // Cek overlapping task 
+      const { data: existingOrders, error: overlapError } = await supabase
+        .from("tasks")
+        .select("task_id")
+        .eq("worker_id", worker_id)
+        .in("statustask", ["Belum Mulai", "Proses", "Revisi"])
+        .lte("start_date", safeDueDate)
+        .gte("due_date", safeStartDate);
+
+      if (overlapError) throw overlapError;
+
+      if (existingOrders.length > 0) {
+        return h.response({
+          message: "Gagal menambahkan task: Terdapat task lain dalam rentang tanggal tersebut.",
+        }).code(400);
+      }
+
+      const { data, error } = await supabase
         .from('tasks')
         .insert([{
           order_id,
@@ -25,10 +51,12 @@ const taskController = {
           role_id,
           statustask: 'Belum Mulai', // default
           quantity: quantity ?? 0,
-          note,
-          start_date,
-          due_date
-        }]);
+          note: note ?? '',
+          start_date: safeStartDate,
+          due_date: safeDueDate
+        }])
+        .select('task_id')
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -36,7 +64,7 @@ const taskController = {
       const keys = await redis.keys('tasks:*'); // ambil semua cache task
       if (keys.length) await redis.del(keys);
 
-      return h.response({ message: 'Task berhasil ditambahkan' }).code(201);
+      return h.response({ message: 'Task berhasil ditambahkan',  task_id: data.task_id}).code(201);
     } catch (err) {
       console.error(err);
       return h.response({ message: 'Gagal menambahkan task' }).code(500);
@@ -45,9 +73,9 @@ const taskController = {
 
   // Ambil tasks dengan pagination, urut dari task terbaru
   getTasks: async (request, h) => {  
-    const redis = await getRedis();
-
     try {
+      const redis = await getRedis();
+
       const page = parseInt(request.query.page) || 1;
       const limit = 20;
       const from = (page - 1) * limit;
@@ -93,10 +121,10 @@ const taskController = {
 
   // Ambil semua task berdasarkan order dari VIEW
   getTasksByOrder: async (request, h) => {
-    const redis = await getRedis();
-    const { order_id } = request.params;
-
     try {
+      const redis = await getRedis();
+      const { order_id } = request.params;
+
       const page = parseInt(request.query.page) || 1;
       const limit = 20;
       const from = (page - 1) * limit;
@@ -143,10 +171,10 @@ const taskController = {
 
   // Ambil semua task berdasarkan worker_id
   getTasksByWorker: async (request, h) => {
-    const redis = await getRedis();
-    const { worker_id } = request.params;
-
     try {
+      const redis = await getRedis();
+      const { worker_id } = request.params;
+
       const page = parseInt(request.query.page) || 1;
       const limit = 20;
       const from = (page - 1) * limit;
@@ -191,9 +219,9 @@ const taskController = {
 
   // Info task spesifik
   getTaskInfo: async (request, h) => {
-    const { task_id } = request.params;
-
     try {
+      const { task_id } = request.params;
+
       const { data, error } = await supabase
         .from('tasks_with_worker_name')
         .select(`
@@ -223,29 +251,60 @@ const taskController = {
 
   // Update task (note, tanggal, quantity, role)
   updateTask: async (request, h) => {
-    const redis = await getRedis();
-    const { task_id } = request.params;
-    const {
-      role_id,
-      quantity,
-      note,
-      statustask,
-      start_date,
-      due_date
-    } = request.payload;
-
     try {
-      const { error } = await supabase
+      const redis = await getRedis();
+
+      const { task_id } = request.params;
+      const {
+        worker_id,
+        role_id,
+        quantity,
+        note,
+        statustask,
+        start_date,
+        due_date
+      } = request.payload;
+
+      const safeStartDate = new Date(start_date).toISOString();
+      const safeDueDate = new Date(due_date).toISOString();
+
+      if (new Date(safeDueDate) < new Date(safeStartDate)) {
+        return h.response({
+          message: "Gagal memperbarui task: Tanggal selesai (due_date) harus setelah atau sama dengan tanggal mulai (start_date)!",
+        }).code(400);
+      }
+
+      // Cek overlapping task tapi jangan bandingin sama dirinya sendiri
+      const { data: existingOrders, error: overlapError } = await supabase
+        .from("tasks")
+        .select("task_id")
+        .eq("worker_id", worker_id)
+        .neq("task_id", task_id) // penting: jangan cek ke dirinya sendiri
+        .in("statustask", ["Belum Mulai", "Proses", "Revisi"])
+        .lte("start_date", safeDueDate)
+        .gte("due_date", safeStartDate);
+
+      if (overlapError) throw overlapError;
+
+      if (existingOrders.length > 0) {
+        return h.response({
+          message: "Gagal memperbarui task: Terdapat task lain dalam rentang tanggal tersebut.",
+        }).code(400);
+      }
+
+      const { data, error } = await supabase
         .from('tasks')
         .update({
           role_id,
           quantity: quantity ?? 0,
-          note,
+          note: note ?? '',
           statustask,
-          start_date,
-          due_date
+          start_date: safeStartDate,
+          due_date: safeDueDate
         })
-        .eq('task_id', task_id);
+        .eq('task_id', task_id)
+        .select('task_id')
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -253,7 +312,7 @@ const taskController = {
       const keys = await redis.keys('tasks:*'); // ambil semua cache task
       if (keys.length) await redis.del(keys);
 
-      return h.response({ message: 'Task berhasil diperbarui' }).code(200);
+      return h.response({ message: 'Task berhasil diperbarui', task_id: data.task_idNow }).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: 'Gagal memperbarui task' }).code(500);

@@ -2,11 +2,11 @@ const supabase = require("../config/supabaseClient");
 const { getRedis } = require('../config/redisClient');
 
 const orderController = {
-  // Buat Order
+  // Tambah order baru
   addOrder: async (request, h) => {
-    const redis = await getRedis();
-
     try {
+      const redis = await getRedis();
+
       const { 
         order_name, 
         typeorder, 
@@ -17,26 +17,37 @@ const orderController = {
       } = request.payload;
       const { user_id } = request.auth;
 
-      const { error } = await supabase.from("orders").insert([
-        {
-          owner_id : user_id,
+      const safeStartDate = new Date(start_date).toISOString();
+      const safeDueDate = new Date(due_date).toISOString();
+
+      if (new Date(safeDueDate) < new Date(safeStartDate)) {
+        return h.response({
+          message: "Gagal menambahkan order: Tanggal selesai (due_date) harus setelah atau sama dengan tanggal mulai (start_date)!",
+        }).code(400);
+      }
+
+      const { data, error } = await supabase
+        .from("orders")
+        .insert([{
+          owner_id: user_id,
           order_name,
           typeorder,
-          quantity,
+          quantity: quantity ?? 0,
           note,
           statusorder: "Pesanan Baru",
-          start_date,
-          due_date,
-        },
-      ]);
+          start_date: safeStartDate,
+          due_date: safeDueDate,
+        }])
+        .select('order_id')
+        .maybeSingle();
 
       if (error) throw error;
 
       // Setelah operasi insert/update/delete berhasil
-      const keys = await redis.keys('orders:*'); // ambil semua cache task
+      const keys = await redis.keys('orders:*');
       if (keys.length) await redis.del(keys);
 
-      return h.response({ message: "Order berhasil ditambahkan" }).code(201);
+      return h.response({ message: "Order berhasil ditambahkan", order_id: data.order_id }).code(201);
     } catch (err) {
       console.error(err);
       return h.response({ message: "Gagal menambahkan order" }).code(500);
@@ -45,9 +56,9 @@ const orderController = {
 
   // Ambil orders dengan pagination
   getOrders: async (request, h) => {
-    const redis = await getRedis();
-
     try {
+      const redis = await getRedis();
+
       const page = parseInt(request.query.page) || 1;
       const limit = 20;
       const from = (page - 1) * limit;
@@ -81,8 +92,9 @@ const orderController = {
 
   // Detail Order
   getOrderInfo: async (request, h) => {
-    const { order_id } = request.params;
     try {
+      const { order_id } = request.params;
+      
       const { data, error } = await supabase
         .from("orders")
         .select("*")
@@ -99,55 +111,68 @@ const orderController = {
 
   // Update Order Lengkap
   updateOrder: async (request, h) => {
-    const redis = await getRedis();
-
-    const { order_id } = request.params;
-    const {
-      order_name,
-      typeorder,
-      quantity,
-      note,
-      statusorder,
-      start_date,
-      due_date,
-    } = request.payload;
-    const { user_id } = request.auth;
-
     try {
-      const { error } = await supabase
+      const redis = await getRedis();
+
+      const { order_id } = request.params;
+      const {
+        order_name,
+        typeorder,
+        quantity,
+        note,
+        statusorder,
+        start_date,
+        due_date,
+      } = request.payload;
+      const { user_id } = request.auth;
+
+      const safeStartDate = new Date(start_date).toISOString();
+      const safeDueDate = new Date(due_date).toISOString();
+
+      if (new Date(safeDueDate) < new Date(safeStartDate)) {
+        return h.response({
+          message: "Gagal memperbarui order: Tanggal selesai (due_date) harus setelah atau sama dengan tanggal mulai (start_date)!",
+        }).code(400);
+      }
+
+      // Update order
+      const { data, error } = await supabase
         .from("orders")
         .update({
-          owner_id : user_id,
+          owner_id: user_id,
           order_name,
           typeorder,
-          quantity,
+          quantity: quantity ?? 0,
           note,
           statusorder,
-          start_date,
-          due_date,
+          start_date: safeStartDate,
+          due_date: safeDueDate,
           updated_at: new Date(),
         })
-        .eq("order_id", order_id);
+        .eq('order_id', order_id)
+        .select('order_id')
+        .maybeSingle();
 
       if (error) throw error;
 
       // Setelah operasi insert/update/delete berhasil
-      const keys = await redis.keys('orders:*'); // ambil semua cache task
+      const keys = await redis.keys('orders:*');
       if (keys.length) await redis.del(keys);
 
-      return h.response({ message: "Order berhasil diperbarui" }).code(200);
+      return h.response({ message: "Order berhasil diperbarui", order_id: data.order_idNow }).code(200);
     } catch (err) {
       console.error(err);
       return h.response({ message: "Gagal memperbarui order" }).code(500);
     }
   },
 
+
   // Hapus Order
   deleteOrder: async (request, h) => {
-    const redis = await getRedis();
-
-    const { order_id } = request.params;
     try {
+      const redis = await getRedis();
+
+      const { order_id } = request.params;
       const { error } = await supabase
         .from("orders")
         .delete()
@@ -167,12 +192,12 @@ const orderController = {
 
   // Update Status Order
   updateOrderStatus: async (request, h) => {
-    const redis = await getRedis();
-    
-    const { order_id } = request.params;
-    const { statusorder } = request.payload;
-
     try {
+      const redis = await getRedis();
+    
+      const { order_id } = request.params;
+      const { statusorder } = request.payload;
+
       const { error } = await supabase
         .from("orders")
         .update({ statusorder })
